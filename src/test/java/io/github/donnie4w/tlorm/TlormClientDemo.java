@@ -48,7 +48,7 @@ class UserInfo extends Orm<UserInfo> {
     public String name;
     public int age;
     public byte[] desc;
-    @Field(name = "Achi")
+    @DefName(name = "Achi")
     public float achi;
     public byte gender;
     public char char1;

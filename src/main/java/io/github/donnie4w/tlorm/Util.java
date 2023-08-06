@@ -94,7 +94,7 @@ public class Util {
 
     protected static byte[] prase(java.lang.reflect.Field c, Object o) throws IllegalAccessException {
         byte[] bs = null;
-        switch (c.getType().getSimpleName()) {
+        switch (c.getType().getSimpleName().toLowerCase()) {
             case "long":
                 bs = Util.long2Bytes(c.getLong(o));
                 break;
@@ -119,7 +119,7 @@ public class Util {
             case "char":
                 bs = Util.char2Bytes(c.getChar(o));
                 break;
-            case "String":
+            case "string":
                 bs = Util.string2Bytes(c.get(o).toString());
                 break;
             case "byte[]":
@@ -134,7 +134,7 @@ public class Util {
 
     protected static void prase4set(java.lang.reflect.Field c, Object o, java.nio.ByteBuffer bb) throws IllegalAccessException {
         byte[] bs = null;
-        switch (c.getType().getSimpleName()) {
+        switch (c.getType().getSimpleName().toLowerCase()) {
             case "long":
                 c.setLong(o, Util.bytes2Long(bb.array()));
                 break;
@@ -159,7 +159,7 @@ public class Util {
             case "char":
                 c.setChar(o, Util.bytes2char(bb.array()));
                 break;
-            case "String":
+            case "string":
                 c.set(o, Util.bytes2String(bb.array()));
                 break;
             case "byte[]":
@@ -172,7 +172,7 @@ public class Util {
 
     protected static byte[] praseValue(Field c, Object o) throws IllegalAccessException {
         byte[] bs = null;
-        switch (c.getType().getSimpleName()) {
+        switch (c.getType().getSimpleName().toLowerCase()) {
             case "long":
                 bs = Util.long2Bytes((Long) o);
                 break;
@@ -197,7 +197,7 @@ public class Util {
             case "char":
                 bs = Util.char2Bytes((Character) o);
                 break;
-            case "String":
+            case "string":
                 bs = Util.string2Bytes((String) o);
                 break;
             case "byte[]":

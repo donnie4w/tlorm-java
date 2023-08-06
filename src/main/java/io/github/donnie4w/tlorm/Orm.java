@@ -1,4 +1,4 @@
-/*
+/**
  * Copyright 2023 tldb Author. All Rights Reserved.
  * email: donnie4w@gmail.com
  * https://githuc.com/donnie4w/tldb
@@ -35,7 +35,11 @@ public class Orm<T> {
 
     public Orm() {
         praseValue(false);
-        this.name = this.getClass().getSimpleName().toLowerCase();
+        if (this.getClass().isAnnotationPresent(DefName.class)) {
+            this.name = this.getClass().getAnnotation(DefName.class).name();
+        }else{
+            this.name = this.getClass().getSimpleName().toLowerCase();
+        }
         this.setClient(defaultClient);
     }
 
@@ -49,8 +53,8 @@ public class Orm<T> {
             for (Field f : this.getClass().getFields()) {
                 if (f.getName().toLowerCase() != "id") {
                     String fieldname = null;
-                    if (f.isAnnotationPresent(io.github.donnie4w.tlorm.Field.class)) {
-                        io.github.donnie4w.tlorm.Field field = f.getAnnotation(io.github.donnie4w.tlorm.Field.class);
+                    if (f.isAnnotationPresent(DefName.class)) {
+                        DefName field = f.getAnnotation(DefName.class);
                         fieldname = field.name();
                     }
                     fm.put(f.getName(), new Object[]{fieldname, f.isAnnotationPresent(Index.class)});
@@ -153,6 +157,18 @@ public class Orm<T> {
 
     public long selectId() throws TlException {
         return this.client.selectId(this.name);
+    }
+
+    public long selectIdByIdx(String columnName, Object columnValue) throws TlException {
+        try {
+            byte[] bs = Util.praseValue(this.getClass().getField(columnName), columnValue);
+            if (bs != null) {
+                return this.client.selectIdByIdx(this.name, columnName, bs);
+            }
+        } catch (Exception e) {
+            throw new TlException(e);
+        }
+        return 0;
     }
 
     public T selectById(long id) throws TlException {

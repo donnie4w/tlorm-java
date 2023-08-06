@@ -6,7 +6,7 @@
 
     <groupId>io.github.donnie4w</groupId>
     <artifactId>tlorm-java</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>orm  for tldb</description>
