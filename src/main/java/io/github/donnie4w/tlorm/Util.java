@@ -72,15 +72,15 @@ public class Util {
     }
 
     protected static byte[] string2Bytes(String value) {
-        return  value.getBytes(StandardCharsets.UTF_8);
+        return value.getBytes(StandardCharsets.UTF_8);
     }
 
     protected static boolean bytes2boolean(byte[] bs) {
-        return bs==null?false:bs[0]>0?true:false;
+        return bs == null ? false : bs[0] > 0 ? true : false;
     }
 
     protected static byte[] boolean2Bytes(boolean value) {
-        return new byte[]{value?(byte)1:(byte)0};
+        return new byte[]{value ? (byte) 1 : (byte) 0};
     }
 
     protected static char bytes2char(byte[] bs) {
@@ -88,39 +88,71 @@ public class Util {
     }
 
     protected static byte[] char2Bytes(char value) {
-        return short2Bytes((short)value );
+        return short2Bytes((short) value);
     }
 
 
-    protected static byte[] prase(java.lang.reflect.Field c, Object o) throws IllegalAccessException {
+    protected static byte[] prase(java.lang.reflect.Field c, Object o, boolean isNonzero) throws IllegalAccessException {
         byte[] bs = null;
         switch (c.getType().getSimpleName().toLowerCase()) {
             case "long":
-                bs = Util.long2Bytes(c.getLong(o));
+                long l = c.getLong(o);
+                if (isNonzero && l == 0) {
+                    return bs;
+                }
+                bs = Util.long2Bytes(l);
                 break;
             case "int":
-                bs = Util.int2Bytes(c.getInt(o));
+                int i = c.getInt(o);
+                if (isNonzero && i == 0){
+                    return bs;
+                }
+                bs = Util.int2Bytes(i);
                 break;
             case "short":
-                bs = Util.short2Bytes(c.getShort(o));
+                short s = c.getShort(o);
+                if (isNonzero && s == 0){
+                    return bs;
+                }
+                bs = Util.short2Bytes(s);
                 break;
             case "float":
-                bs = Util.float2Bytes(c.getFloat(o));
+                float f = c.getFloat(o);
+                if (isNonzero && f == 0){
+                    return bs;
+                }
+                bs = Util.float2Bytes(f);
                 break;
             case "boolean":
                 bs = Util.boolean2Bytes(c.getBoolean(o));
                 break;
             case "byte":
-                bs = new byte[]{c.getByte(o)};
+                byte bt = c.getByte(o);
+                if (isNonzero && bt == 0){
+                    return bs;
+                }
+                bs = new byte[]{bt};
                 break;
             case "double":
-                bs = Util.double2Bytes(c.getDouble(o));
+                double d = c.getDouble(o);
+                if (isNonzero && d == 0){
+                    return bs;
+                }
+                bs = Util.double2Bytes(d);
                 break;
             case "char":
-                bs = Util.char2Bytes(c.getChar(o));
+                char cr = c.getChar(o);
+                if (isNonzero && cr == 0){
+                    return bs;
+                }
+                bs = Util.char2Bytes(cr);
                 break;
             case "string":
-                bs = Util.string2Bytes(c.get(o).toString());
+                String st = c.get(o).toString();
+                if (isNonzero && st == ""){
+                    return bs;
+                }
+                bs = Util.string2Bytes(st);
                 break;
             case "byte[]":
                 bs = (byte[]) c.get(o);

@@ -37,7 +37,7 @@ public class Orm<T> {
         praseValue(false);
         if (this.getClass().isAnnotationPresent(DefName.class)) {
             this.name = this.getClass().getAnnotation(DefName.class).name();
-        }else{
+        } else {
             this.name = this.getClass().getSimpleName().toLowerCase();
         }
         this.setClient(defaultClient);
@@ -97,7 +97,7 @@ public class Orm<T> {
                     name = key;
                 }
                 if (key.toLowerCase() != "id") {
-                    byte[] bs = Util.prase(o.getClass().getField(key), o);
+                    byte[] bs = Util.prase(o.getClass().getField(key), o, false);
                     m.put(name, bs);
                 }
             }
@@ -119,8 +119,35 @@ public class Orm<T> {
                     name = key;
                 }
                 if (key.toLowerCase() != "id") {
-                    byte[] bs = Util.prase(o.getClass().getField(key), o);
-                    m.put(name, bs);
+                    byte[] bs = Util.prase(o.getClass().getField(key), o, false);
+                    if (bs != null) {
+                        m.put(name, bs);
+                    }
+                }
+            }
+            AckBean ab = this.client.update(this.name, id, m);
+            return ab.seq;
+        } catch (Exception e) {
+            throw new TlException(e);
+        }
+    }
+
+
+    public long updateNonzero(T o) throws TlException {
+        Map<String, byte[]> m = new HashMap<>();
+        try {
+            Map<String, Object[]> pm = cm.get(this.getClass());
+            long id = o.getClass().getField("id").getLong(o);
+            for (String key : pm.keySet()) {
+                String name = (String) pm.get(key)[0];
+                if (name == null) {
+                    name = key;
+                }
+                if (key.toLowerCase() != "id") {
+                    byte[] bs = Util.prase(o.getClass().getField(key), o, true);
+                    if (bs != null) {
+                        m.put(name, bs);
+                    }
                 }
             }
             AckBean ab = this.client.update(this.name, id, m);
