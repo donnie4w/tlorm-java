@@ -98,7 +98,9 @@ public class Orm<T> {
                 }
                 if (key.toLowerCase() != "id") {
                     byte[] bs = Util.prase(o.getClass().getField(key), o, false);
-                    m.put(name, bs);
+                    if (bs != null) {
+                        m.put(name, bs);
+                    }
                 }
             }
             AckBean ab = defaultClient.insert(this.name, m);
@@ -108,6 +110,9 @@ public class Orm<T> {
         }
     }
 
+    /**
+     * Update data for Non null values
+     */
     public long update(T o) throws TlException {
         Map<String, byte[]> m = new HashMap<>();
         try {
@@ -132,7 +137,9 @@ public class Orm<T> {
         }
     }
 
-
+    /**
+     * Update data for Nonzero values
+     */
     public long updateNonzero(T o) throws TlException {
         Map<String, byte[]> m = new HashMap<>();
         try {

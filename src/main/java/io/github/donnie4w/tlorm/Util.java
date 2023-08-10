@@ -148,11 +148,10 @@ public class Util {
                 bs = Util.char2Bytes(cr);
                 break;
             case "string":
-                String st = c.get(o).toString();
-                if (isNonzero && st == ""){
+                if (c.get(o) == null){
                     return bs;
                 }
-                bs = Util.string2Bytes(st);
+                bs = Util.string2Bytes(c.get(o).toString());
                 break;
             case "byte[]":
                 bs = (byte[]) c.get(o);
