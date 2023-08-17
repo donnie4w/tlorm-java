@@ -6,6 +6,7 @@
  */
 package io.github.donnie4w.tlorm;
 
+import io.github.donnie4w.tldb.tlcli.ColumnType;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -76,7 +77,7 @@ public class Util {
     }
 
     protected static boolean bytes2boolean(byte[] bs) {
-        return bs == null ? false : bs[0] > 0 ? true : false;
+        return bs == null ? false : bs[0] > 0;
     }
 
     protected static byte[] boolean2Bytes(boolean value) {
@@ -104,21 +105,21 @@ public class Util {
                 break;
             case "int":
                 int i = c.getInt(o);
-                if (isNonzero && i == 0){
+                if (isNonzero && i == 0) {
                     return bs;
                 }
                 bs = Util.int2Bytes(i);
                 break;
             case "short":
                 short s = c.getShort(o);
-                if (isNonzero && s == 0){
+                if (isNonzero && s == 0) {
                     return bs;
                 }
                 bs = Util.short2Bytes(s);
                 break;
             case "float":
                 float f = c.getFloat(o);
-                if (isNonzero && f == 0){
+                if (isNonzero && f == 0) {
                     return bs;
                 }
                 bs = Util.float2Bytes(f);
@@ -128,27 +129,27 @@ public class Util {
                 break;
             case "byte":
                 byte bt = c.getByte(o);
-                if (isNonzero && bt == 0){
+                if (isNonzero && bt == 0) {
                     return bs;
                 }
                 bs = new byte[]{bt};
                 break;
             case "double":
                 double d = c.getDouble(o);
-                if (isNonzero && d == 0){
+                if (isNonzero && d == 0) {
                     return bs;
                 }
                 bs = Util.double2Bytes(d);
                 break;
             case "char":
                 char cr = c.getChar(o);
-                if (isNonzero && cr == 0){
+                if (isNonzero && cr == 0) {
                     return bs;
                 }
                 bs = Util.char2Bytes(cr);
                 break;
             case "string":
-                if (c.get(o) == null){
+                if (c.get(o) == null) {
                     return bs;
                 }
                 bs = Util.string2Bytes(c.get(o).toString());
@@ -162,9 +163,49 @@ public class Util {
         return bs;
     }
 
+    protected static ColumnType praseColumnType(String fieldName)  {
+        ColumnType s = null;
+        try{
+            switch (fieldName) {
+                case "long":
+                    s = ColumnType.INT64;
+                    break;
+                case "int":
+                    s = ColumnType.INT32;
+                    break;
+                case "short":
+                    s = ColumnType.INT16;
+                    break;
+                case "float":
+                    s = ColumnType.FLOAT32;
+                    break;
+                case "boolean":
+                    s = ColumnType.INT8;
+                    break;
+                case "byte":
+                    s = ColumnType.BYTE;
+                    break;
+                case "double":
+                    s = ColumnType.FLOAT64;
+                    break;
+                case "string":
+                    s = ColumnType.STRING;
+                    break;
+                case "byte[]":
+                case "char":
+                default:
+                    s = ColumnType.BINARY;
+            }
+        }catch (Exception e){
+        }
+        if (s == null) {
+            s = ColumnType.BINARY;
+        }
+        return s;
+    }
+
 
     protected static void prase4set(java.lang.reflect.Field c, Object o, java.nio.ByteBuffer bb) throws IllegalAccessException {
-        byte[] bs = null;
         switch (c.getType().getSimpleName().toLowerCase()) {
             case "long":
                 c.setLong(o, Util.bytes2Long(bb.array()));
@@ -220,7 +261,7 @@ public class Util {
                 bs = Util.boolean2Bytes((Boolean) o);
                 break;
             case "byte":
-                bs = new byte[]{c.getByte((Byte) o)};
+                bs = new byte[]{c.getByte(o)};
                 break;
             case "double":
                 bs = Util.double2Bytes((Double) o);

@@ -9,12 +9,12 @@ package io.github.donnie4w.tlorm;
 
 import io.github.donnie4w.tldb.tlcli.*;
 
+import static io.github.donnie4w.tlorm.Util.*;
+
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
 
 public class Orm<T> {
     private static Map<Class, Map<String, Object[]>> cm = new ConcurrentHashMap<Class, Map<String, Object[]>>();
@@ -34,7 +34,7 @@ public class Orm<T> {
     }
 
     public Orm() {
-        praseValue(false);
+        prase(false);
         if (this.getClass().isAnnotationPresent(DefName.class)) {
             this.name = this.getClass().getAnnotation(DefName.class).name();
         } else {
@@ -47,18 +47,18 @@ public class Orm<T> {
         this.client = client;
     }
 
-    private void praseValue(boolean force) {
-        if (!cm.containsKey(this) || force) {
+    private void prase(boolean force) {
+        if (!cm.containsKey(this.getClass()) || force) {
             Map<String, Object[]> fm = new HashMap<>();
             for (Field f : this.getClass().getFields()) {
-                if (f.getName().toLowerCase() != "id") {
+                if (!"id".equals(f.getName().toLowerCase())) {
                     String fieldname = null;
                     if (f.isAnnotationPresent(DefName.class)) {
                         DefName field = f.getAnnotation(DefName.class);
                         fieldname = field.name();
                     }
-                    fm.put(f.getName(), new Object[]{fieldname, f.isAnnotationPresent(Index.class)});
-                } else if (f.getType().getSimpleName() != "long") {
+                    fm.put(f.getName(), new Object[]{fieldname, f.isAnnotationPresent(Index.class), f.getType().getSimpleName().toLowerCase()});
+                } else if (!"long".equals(f.getType().getSimpleName())) {
                     throw new TlRunTimeException("not found \"id\" in long type");
                 }
             }
@@ -68,23 +68,26 @@ public class Orm<T> {
 
     public void createTable() throws TlException {
         Map<String, Object[]> pm = cm.get(this.getClass());
-        String[] fs = new String[pm.size()];
+        Map<String, ColumnType> fm = new HashMap<>();
         List<String> idxlist = new ArrayList<>();
-        int i = 0;
-        for (String key : pm.keySet()) {
-            if (key.toLowerCase() != "id") {
-                String name = (String) pm.get(key)[0];
-                if (name != null) {
-                    fs[i++] = name;
-                } else {
-                    fs[i++] = key;
+        for (Map.Entry<String, Object[]> me : pm.entrySet()) {
+            if (!(me.getKey().length() == 2 && "id".equals(me.getKey().toLowerCase()))) {
+                String name0 = (String) me.getValue()[0];
+                ColumnType ct = praseColumnType((String) me.getValue()[2]);
+                if (name0 == null) {
+                    name0 = me.getKey();
                 }
-                if ((Boolean) pm.get(key)[1]) {
-                    idxlist.add(key);
+                fm.put(name0, ct);
+                if ((Boolean) me.getValue()[1]) {
+                    idxlist.add(name0);
                 }
             }
         }
-        this.client.createTable(this.name, fs, idxlist.toArray(new String[]{}));
+        this.client.createTable(this.name, fm, idxlist.toArray(new String[]{}));
+    }
+
+    public long insert() throws TlException {
+        return this.insert((T) this);
     }
 
     public long insert(T o) throws TlException {
@@ -96,7 +99,7 @@ public class Orm<T> {
                 if (name == null) {
                     name = key;
                 }
-                if (key.toLowerCase() != "id") {
+                if (!(key.length() == 2 && "id".equals(key.toLowerCase()))) {
                     byte[] bs = Util.prase(o.getClass().getField(key), o, false);
                     if (bs != null) {
                         m.put(name, bs);
@@ -108,6 +111,10 @@ public class Orm<T> {
         } catch (Exception e) {
             throw new TlException(e);
         }
+    }
+
+    public long update() throws TlException {
+        return this.update((T) this);
     }
 
     /**
@@ -123,7 +130,7 @@ public class Orm<T> {
                 if (name == null) {
                     name = key;
                 }
-                if (key.toLowerCase() != "id") {
+                if (!(key.length() == 2 && "id".equals(key.toLowerCase()))) {
                     byte[] bs = Util.prase(o.getClass().getField(key), o, false);
                     if (bs != null) {
                         m.put(name, bs);
@@ -137,6 +144,10 @@ public class Orm<T> {
         }
     }
 
+    public long updateNonzero() throws TlException {
+        return this.updateNonzero((T) this);
+    }
+
     /**
      * Update data for Nonzero values
      */
@@ -146,14 +157,14 @@ public class Orm<T> {
             Map<String, Object[]> pm = cm.get(this.getClass());
             long id = o.getClass().getField("id").getLong(o);
             for (String key : pm.keySet()) {
-                String name = (String) pm.get(key)[0];
-                if (name == null) {
-                    name = key;
+                String name0 = (String) pm.get(key)[0];
+                if (name0 == null) {
+                    name0 = key;
                 }
-                if (key.toLowerCase() != "id") {
+                if (!"id".equals(key.toLowerCase())) {
                     byte[] bs = Util.prase(o.getClass().getField(key), o, true);
                     if (bs != null) {
-                        m.put(name, bs);
+                        m.put(name0, bs);
                     }
                 }
             }
@@ -173,20 +184,24 @@ public class Orm<T> {
     }
 
     public void alterTable() throws TlException {
-        praseValue(true);
+        prase(true);
         Map<String, Object[]> pm = cm.get(this.getClass());
-        String[] fs = new String[pm.size()];
+        Map<String, ColumnType> fm = new HashMap<>();
         List<String> idxlist = new ArrayList<>();
-        int i = 0;
-        for (String key : pm.keySet()) {
-            if (key.toLowerCase() != "id") {
-                fs[i++] = key;
-                if ((Boolean) pm.get(key)[1]) {
-                    idxlist.add(key);
+        for (Map.Entry<String, Object[]> me : pm.entrySet()) {
+            if (!(me.getKey().length() == 2 && "id".equals(me.getKey().toLowerCase()))) {
+                String name0 = (String) me.getValue()[0];
+                ColumnType ct = praseColumnType((String) me.getValue()[2]);
+                if (name0 == null) {
+                    name0 = me.getKey();
+                }
+                fm.put(name0, ct);
+                if ((Boolean) me.getValue()[1]) {
+                    idxlist.add(name0);
                 }
             }
         }
-        this.client.alterTable(this.name, fs, idxlist.toArray(new String[]{}));
+        this.client.alterTable(this.name, fm, idxlist.toArray(new String[]{}));
     }
 
     public long selectId() throws TlException {
@@ -215,12 +230,12 @@ public class Orm<T> {
                 t = (T) this.getClass().getDeclaredConstructor().newInstance();
                 t.getClass().getField("id").setLong(t, db.getId());
                 for (String key : pm.keySet()) {
-                    String name = (String) pm.get(key)[0];
-                    if (name == null) {
-                        name = key;
+                    String name0 = (String) pm.get(key)[0];
+                    if (name0 == null) {
+                        name0 = key;
                     }
-                    if (m.containsKey(name)) {
-                        Util.prase4set(t.getClass().getField(key), t, m.get(name));
+                    if (m.containsKey(name0)) {
+                        Util.prase4set(t.getClass().getField(key), t, m.get(name0));
                     }
                 }
             }
@@ -242,17 +257,17 @@ public class Orm<T> {
                     T t = (T) this.getClass().getDeclaredConstructor().newInstance();
                     t.getClass().getField("id").setLong(t, db.getId());
                     for (String key : pm.keySet()) {
-                        String name = (String) pm.get(key)[0];
-                        if (name == null) {
-                            name = key;
+                        String name0 = (String) pm.get(key)[0];
+                        if (name0 == null) {
+                            name0 = key;
                         }
-                        if (m.containsKey(name)) {
-                            Util.prase4set(t.getClass().getField(key), t, m.get(name));
+                        if (m.containsKey(name0)) {
+                            Util.prase4set(t.getClass().getField(key), t, m.get(name0));
                         }
                     }
                     rlist.add(t);
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    throw new TlException(e);
                 }
             }
         }
@@ -272,12 +287,12 @@ public class Orm<T> {
                         t = (T) this.getClass().getDeclaredConstructor().newInstance();
                         t.getClass().getField("id").setLong(t, db.getId());
                         for (String key : pm.keySet()) {
-                            String name = (String) pm.get(key)[0];
-                            if (name == null) {
-                                name = key;
+                            String name0 = (String) pm.get(key)[0];
+                            if (name0 == null) {
+                                name0 = key;
                             }
-                            if (m.containsKey(name)) {
-                                Util.prase4set(t.getClass().getField(key), t, m.get(name));
+                            if (m.containsKey(name0)) {
+                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
                             }
                         }
                     }
@@ -295,7 +310,7 @@ public class Orm<T> {
             byte[] bs = Util.praseValue(this.getClass().getField(columnName), columnValue);
             List<DataBean> dblist = this.client.selectAllByIdx(this.name, columnName, bs);
             if (dblist != null && dblist.size() > 0) {
-                rlist = new ArrayList<>();
+                rlist = new ArrayList<T>();
                 Map<String, Object[]> pm = cm.get(this.getClass());
                 for (DataBean db : dblist) {
                     Map<String, java.nio.ByteBuffer> m = db.getTBean();
@@ -303,17 +318,17 @@ public class Orm<T> {
                         T t = (T) this.getClass().getDeclaredConstructor().newInstance();
                         t.getClass().getField("id").setLong(t, db.getId());
                         for (String key : pm.keySet()) {
-                            String name = (String) pm.get(key)[0];
-                            if (name == null) {
-                                name = key;
+                            String name0 = (String) pm.get(key)[0];
+                            if (name0 == null) {
+                                name0 = key;
                             }
-                            if (m.containsKey(name)) {
-                                Util.prase4set(t.getClass().getField(key), t, m.get(name));
+                            if (m.containsKey(name0)) {
+                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
                             }
                         }
                         rlist.add(t);
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        throw new TlException(e);
                     }
                 }
             }
@@ -343,17 +358,17 @@ public class Orm<T> {
                         T t = (T) this.getClass().getDeclaredConstructor().newInstance();
                         t.getClass().getField("id").setLong(t, db.getId());
                         for (String key : pm.keySet()) {
-                            String name = (String) pm.get(key)[0];
-                            if (name == null) {
-                                name = key;
+                            String name0 = (String) pm.get(key)[0];
+                            if (name0 == null) {
+                                name0 = key;
                             }
-                            if (m.containsKey(name)) {
-                                Util.prase4set(t.getClass().getField(key), t, m.get(name));
+                            if (m.containsKey(name0)) {
+                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
                             }
                         }
                         rlist.add(t);
                     } catch (Exception e) {
-                        throw new RuntimeException(e);
+                        throw new TlException(e);
                     }
                 }
             }

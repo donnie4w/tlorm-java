@@ -14,29 +14,39 @@ import java.util.List;
 
 public class TlormClientDemo {
     public static void main(String[] args) throws TlException {
-        Orm.registerDefaultResource(false, "127.0.0.1", 7100, "mycli=123");
+        Orm.registerDefaultResource(true, "127.0.0.1", 7100, "mycli=123");
         UserInfo u = new UserInfo();
         u.createTable();
-        long seq = u.insert(new UserInfo(0,"tom",22,"aaaa".getBytes(StandardCharsets.UTF_8),1.22f, (byte) 1,(char)222));
-        System.out.println("seq--->"+seq);
-        u.update(new UserInfo(1, "jerry", 22, "bbbb".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1,(char)333));
+        long seq = u.insert(new UserInfo(0, "tom", 22, "aaaa".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 222));
+        System.out.println("seq >>>" + seq);
+        u.update(new UserInfo(1, "jerry", 22, "bbbb".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 333));
+        UserInfo user = new UserInfo();
+        user.id = 1;
+        user.name = "jerrytom";
+        u.updateNonzero(user);
         System.out.println(u.selectById(1));
         System.out.println("————————————————————————————————————————————————");
-        List<UserInfo> uis =u.selectsByIdLimit(1,10);
-        for (UserInfo v:uis){
-            System.out.println(v);
+        List<UserInfo> uis = u.selectsByIdLimit(1, 10);
+        if (uis != null) {
+            for (UserInfo v : uis) {
+                System.out.println(v);
+            }
         }
         System.out.println("————————————————————————————————————————————————");
-        System.out.println(u.selectByIdx("name","tom"));
+        System.out.println(u.selectByIdx("name", "tom"));
         System.out.println("————————————————————————————————————————————————");
-        List<UserInfo> uis2 =u.selectAllByIdx("name","jerry");
-        for (UserInfo v:uis2){
-            System.out.println(v);
+        List<UserInfo> uis2 = u.selectAllByIdx("name", "tom");
+        if (uis2 != null) {
+            for (UserInfo v : uis2) {
+                System.out.println(v);
+            }
         }
         System.out.println("————————————————————————————————————————————————");
-        List<UserInfo> uis3 =u.selectByIdxLimit(0,2,"name","jerry");
-        for (UserInfo v:uis3){
-            System.out.println(v);
+        List<UserInfo> uis3 = u.selectByIdxLimit(0, 2, "name", "tom");
+        if (uis2 != null) {
+            for (UserInfo v : uis3) {
+                System.out.println(v);
+            }
         }
     }
 }
@@ -56,7 +66,7 @@ class UserInfo extends Orm<UserInfo> {
     public UserInfo() {
     }
 
-    public UserInfo(int id, String name, int age, byte[] desc, float achi, byte gender,char char1) {
+    public UserInfo(int id, String name, int age, byte[] desc, float achi, byte gender, char char1) {
         super();
         this.id = id;
         this.name = name;
@@ -68,6 +78,6 @@ class UserInfo extends Orm<UserInfo> {
     }
 
     public String toString() {
-        return id + "," + name + "," + age + "," + new String(desc, StandardCharsets.UTF_8) + "," + achi + "," + gender+","+(char1==(char)222);
+        return id + "," + name + "," + age + "," + new String(desc, StandardCharsets.UTF_8) + "," + achi + "," + gender + "," + (short) char1;
     }
 }
