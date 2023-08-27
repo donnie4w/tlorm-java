@@ -14,7 +14,7 @@ import java.util.List;
 
 public class TlormClientDemo {
     public static void main(String[] args) throws TlException {
-        Orm.registerDefaultResource(true, "127.0.0.1", 7100, "mycli=123");
+        Orm.registerDefaultResource(false, "127.0.0.1", 7100, "mycli=123");
         UserInfo u = new UserInfo();
         u.createTable();
         long seq = u.insert(new UserInfo(0, "tom", 22, "aaaa".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 222));
