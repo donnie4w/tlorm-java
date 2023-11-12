@@ -8,17 +8,20 @@
 package io.github.donnie4w.tlorm;
 
 import io.github.donnie4w.tldb.tlcli.*;
+import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class TlormClientDemo {
     public static void main(String[] args) throws TlException {
-        Orm.registerDefaultResource(false, "127.0.0.1", 7100, "mycli=123");
+        Orm.registerDefaultResource(true, "127.0.0.1", 3336, "mycli=123");
         UserInfo u = new UserInfo();
         u.createTable();
-        long seq = u.insert(new UserInfo(0, "tom", 22, "aaaa".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 222));
-        System.out.println("seq >>>" + seq);
+        for (int i=1;i<100;i++){
+            long seq = u.insert(new UserInfo(0, "tom", i, "aaaa".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 222));
+            System.out.println("seq >>>" + seq);
+        }
         u.update(new UserInfo(1, "jerry", 22, "bbbb".getBytes(StandardCharsets.UTF_8), 1.22f, (byte) 1, (char) 333));
         UserInfo user = new UserInfo();
         user.id = 1;
@@ -49,14 +52,40 @@ public class TlormClientDemo {
             }
         }
     }
-}
 
+    @Test
+    public void Test() throws TlException {
+        Orm.registerDefaultResource(true, "127.0.0.1", 3336, "mycli=123");
+        UserInfo u = new UserInfo();
+        List<UserInfo> list = u.selectByIdxDescLimit("uuid",22,22,1);
+        for (UserInfo ui:list){
+            System.out.println(ui);
+        }
+        System.out.println("--------------------------------------");
+        List<UserInfo> list2 = u.selectByIdxAscLimit("uuid",22,1,3);
+        for (UserInfo ui:list2){
+            System.out.println(ui);
+        }
+        System.out.println("--------------------------------------");
+        List<UserInfo> list3 = u.selectAllByIdx("uuid",22);
+        for (UserInfo ui:list3){
+            System.out.println(ui);
+        }
+        System.out.println("--------------------------------------");
+        List<UserInfo> list4 = u.selectByIdxLimit(0,2,"uuid",22);
+        for (UserInfo ui:list4){
+            System.out.println(ui);
+        }
+    }
+}
 
 class UserInfo extends Orm<UserInfo> {
     public long id;
     @Index
     public String name;
-    public int age;
+
+    @Index
+    public int uuid;
     public byte[] desc;
     @DefName(name = "Achi")
     public float achi;
@@ -66,11 +95,11 @@ class UserInfo extends Orm<UserInfo> {
     public UserInfo() {
     }
 
-    public UserInfo(int id, String name, int age, byte[] desc, float achi, byte gender, char char1) {
+    public UserInfo(int id, String name, int uuid, byte[] desc, float achi, byte gender, char char1) {
         super();
         this.id = id;
         this.name = name;
-        this.age = age;
+        this.uuid = uuid;
         this.desc = desc;
         this.achi = achi;
         this.gender = gender;
@@ -78,6 +107,6 @@ class UserInfo extends Orm<UserInfo> {
     }
 
     public String toString() {
-        return id + "," + name + "," + age + "," + new String(desc, StandardCharsets.UTF_8) + "," + achi + "," + gender + "," + (short) char1;
+        return id + "," + name + "," + uuid + "," + new String(desc, StandardCharsets.UTF_8) + "," + achi + "," + gender + "," + (short) char1;
     }
 }
