@@ -247,31 +247,32 @@ public class Orm<T> {
 
     public List<T> selectsByIdLimit(long startId, long limit) throws TlException {
         List<DataBean> dblist = this.client.selectsByIdLimit(this.name, startId, limit);
-        List<T> rlist = null;
-        if (dblist != null) {
-            rlist = new ArrayList<>();
-            Map<String, Object[]> pm = cm.get(this.getClass());
-            for (DataBean db : dblist) {
-                Map<String, java.nio.ByteBuffer> m = db.getTBean();
-                try {
-                    T t = (T) this.getClass().getDeclaredConstructor().newInstance();
-                    t.getClass().getField("id").setLong(t, db.getId());
-                    for (String key : pm.keySet()) {
-                        String name0 = (String) pm.get(key)[0];
-                        if (name0 == null) {
-                            name0 = key;
-                        }
-                        if (m.containsKey(name0)) {
-                            Util.prase4set(t.getClass().getField(key), t, m.get(name0));
-                        }
-                    }
-                    rlist.add(t);
-                } catch (Exception e) {
-                    throw new TlException(e);
-                }
-            }
-        }
-        return rlist;
+        return this.praseList(dblist);
+//        List<T> rlist = null;
+//        if (dblist != null) {
+//            rlist = new ArrayList<>();
+//            Map<String, Object[]> pm = cm.get(this.getClass());
+//            for (DataBean db : dblist) {
+//                Map<String, java.nio.ByteBuffer> m = db.getTBean();
+//                try {
+//                    T t = (T) this.getClass().getDeclaredConstructor().newInstance();
+//                    t.getClass().getField("id").setLong(t, db.getId());
+//                    for (String key : pm.keySet()) {
+//                        String name0 = (String) pm.get(key)[0];
+//                        if (name0 == null) {
+//                            name0 = key;
+//                        }
+//                        if (m.containsKey(name0)) {
+//                            Util.prase4set(t.getClass().getField(key), t, m.get(name0));
+//                        }
+//                    }
+//                    rlist.add(t);
+//                } catch (Exception e) {
+//                    throw new TlException(e);
+//                }
+//            }
+//        }
+//        return rlist;
     }
 
     public T selectByIdx(String columnName, Object columnValue) throws TlException {
@@ -309,6 +310,79 @@ public class Orm<T> {
         try {
             byte[] bs = Util.praseValue(this.getClass().getField(columnName), columnValue);
             List<DataBean> dblist = this.client.selectAllByIdx(this.name, columnName, bs);
+            return praseList(dblist);
+//            if (dblist != null && dblist.size() > 0) {
+//                rlist = new ArrayList<T>();
+//                Map<String, Object[]> pm = cm.get(this.getClass());
+//                for (DataBean db : dblist) {
+//                    Map<String, java.nio.ByteBuffer> m = db.getTBean();
+//                    try {
+//                        T t = (T) this.getClass().getDeclaredConstructor().newInstance();
+//                        t.getClass().getField("id").setLong(t, db.getId());
+//                        for (String key : pm.keySet()) {
+//                            String name0 = (String) pm.get(key)[0];
+//                            if (name0 == null) {
+//                                name0 = key;
+//                            }
+//                            if (m.containsKey(name0)) {
+//                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
+//                            }
+//                        }
+//                        rlist.add(t);
+//                    } catch (Exception e) {
+//                        throw new TlException(e);
+//                    }
+//                }
+//            }
+        } catch (Exception e) {
+            throw new TlException(e);
+        }
+    }
+
+    public List<T> selectByIdxLimit(long startId, long limit, String columnName, Object... columnValue) throws TlException {
+        List<T> rlist = null;
+        try {
+            List<byte[]> bslist = new ArrayList<>();
+            for (Object o : columnValue) {
+                byte[] bs = Util.praseValue(this.getClass().getField(columnName), o);
+                if (bs != null) {
+                    bslist.add(bs);
+                }
+            }
+            List<DataBean> dblist = this.client.selectByIdxLimit(this.name, columnName, bslist, startId, limit);
+            return praseList(dblist);
+//            if (dblist != null && dblist.size() > 0) {
+//                rlist = new ArrayList<>();
+//                Map<String, Object[]> pm = cm.get(this.getClass());
+//                for (DataBean db : dblist) {
+//                    Map<String, java.nio.ByteBuffer> m = db.getTBean();
+//                    try {
+//                        T t = (T) this.getClass().getDeclaredConstructor().newInstance();
+//                        t.getClass().getField("id").setLong(t, db.getId());
+//                        for (String key : pm.keySet()) {
+//                            String name0 = (String) pm.get(key)[0];
+//                            if (name0 == null) {
+//                                name0 = key;
+//                            }
+//                            if (m.containsKey(name0)) {
+//                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
+//                            }
+//                        }
+//                        rlist.add(t);
+//                    } catch (Exception e) {
+//                        throw new TlException(e);
+//                    }
+//                }
+//            }
+        } catch (Exception e) {
+            throw new TlException(e);
+        }
+    }
+
+
+    private List<T> praseList(List<DataBean> dblist) throws TlException {
+        try {
+            List<T> rlist = null;
             if (dblist != null && dblist.size() > 0) {
                 rlist = new ArrayList<T>();
                 Map<String, Object[]> pm = cm.get(this.getClass());
@@ -332,49 +406,64 @@ public class Orm<T> {
                     }
                 }
             }
+            return rlist;
         } catch (Exception e) {
             throw new TlException(e);
         }
-        return rlist;
     }
 
-    public List<T> selectByIdxLimit(long startId, long limit, String columnName, Object... columnValue) throws TlException {
+    /**频繁更新的索引字段不适合此方法，并且可能导致排序错误*/
+    /**Index fields that are updated frequently are not suitable for this method and may result in sorting errors*/
+    public List<T> selectByIdxDescLimit(String columnName, Object columnValue, long startId, long limit) throws TlException {
         List<T> rlist = null;
         try {
-            List<byte[]> bslist = new ArrayList<>();
-            for (Object o : columnValue) {
-                byte[] bs = Util.praseValue(this.getClass().getField(columnName), o);
-                if (bs != null) {
-                    bslist.add(bs);
-                }
-            }
-            List<DataBean> dblist = this.client.selectByIdxLimit(this.name, columnName, bslist, startId, limit);
-            if (dblist != null && dblist.size() > 0) {
-                rlist = new ArrayList<>();
-                Map<String, Object[]> pm = cm.get(this.getClass());
-                for (DataBean db : dblist) {
-                    Map<String, java.nio.ByteBuffer> m = db.getTBean();
-                    try {
-                        T t = (T) this.getClass().getDeclaredConstructor().newInstance();
-                        t.getClass().getField("id").setLong(t, db.getId());
-                        for (String key : pm.keySet()) {
-                            String name0 = (String) pm.get(key)[0];
-                            if (name0 == null) {
-                                name0 = key;
-                            }
-                            if (m.containsKey(name0)) {
-                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
-                            }
-                        }
-                        rlist.add(t);
-                    } catch (Exception e) {
-                        throw new TlException(e);
-                    }
-                }
-            }
+            byte[] bs = Util.praseValue(this.getClass().getField(columnName), columnValue);
+            List<DataBean> dblist = this.client.selectByIdxDescLimit(this.name, columnName, bs, startId, limit);
+            return praseList(dblist);
+//            if (dblist != null && dblist.size() > 0) {
+//                rlist = new ArrayList<T>();
+//                Map<String, Object[]> pm = cm.get(this.getClass());
+//                for (DataBean db : dblist) {
+//                    Map<String, java.nio.ByteBuffer> m = db.getTBean();
+//                    try {
+//                        T t = (T) this.getClass().getDeclaredConstructor().newInstance();
+//                        t.getClass().getField("id").setLong(t, db.getId());
+//                        for (String key : pm.keySet()) {
+//                            String name0 = (String) pm.get(key)[0];
+//                            if (name0 == null) {
+//                                name0 = key;
+//                            }
+//                            if (m.containsKey(name0)) {
+//                                Util.prase4set(t.getClass().getField(key), t, m.get(name0));
+//                            }
+//                        }
+//                        rlist.add(t);
+//                    } catch (Exception e) {
+//                        throw new TlException(e);
+//                    }
+//                }
+//            }
         } catch (Exception e) {
             throw new TlException(e);
         }
-        return rlist;
     }
+
+
+    /**频繁更新的索引字段不适合此方法，并且可能导致排序错误*/
+    /**Index fields that are updated frequently are not suitable for this method and may result in sorting errors*/
+    public List<T> selectByIdxAscLimit(String columnName, Object columnValue, long startId, long limit) throws TlException {
+        List<T> rlist = null;
+        try {
+            byte[] bs = Util.praseValue(this.getClass().getField(columnName), columnValue);
+            List<DataBean> dblist = this.client.selectByIdxAscLimit(this.name, columnName, bs, startId, limit);
+            return praseList(dblist);
+        } catch (Exception e) {
+            throw new TlException(e);
+        }
+    }
+
+    public void deleteBatch(long... ids) throws TlException {
+        this.client.deleteBatch(this.name, ids);
+    }
+
 }
