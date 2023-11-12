@@ -6,7 +6,7 @@
 
     <groupId>io.github.donnie4w</groupId>
     <artifactId>tlorm-java</artifactId>
-    <version>0.0.2</version>
+    <version>0.0.3</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>orm  for tldb</description>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>io.github.donnie4w</groupId>
             <artifactId>tlcli-j</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.3</version>
         </dependency>
     </dependencies>
     <licenses>
